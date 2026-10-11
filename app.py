@@ -1,6 +1,7 @@
 # LLM-Powered Data Analysis Application
 # Uses Streamlit, Groq, Pandas, NumPy and Plotly.
 
+import ast
 import os
 import json
 import math
@@ -174,17 +175,54 @@ Requirements:
                     code = code.replace("\\n", "\n")
 
                     # Basic code restrictions.
-                    forbidden = [
-                        "import ", "open(", "exec(", "eval(",
-                        "__import__", "subprocess", "requests",
-                        "urllib", "os.", "globals(", "locals("
-                    ]
-
-                    if any(term in code for term in forbidden):
+                                        # Validate generated code using Python's AST.
+                    try:
+                        tree = ast.parse(code)
+                    except SyntaxError as e:
                         raise ValueError(
-                            "Generated code contains a restricted operation. "
-                            "Please rephrase your question and try again."
+                            f"Generated code has invalid Python syntax: {e}"
                         )
+
+                    forbidden_names = {
+                        "open", "exec", "eval", "compile",
+                        "__import__", "globals", "locals",
+                        "getattr", "setattr", "delattr",
+                        "input", "breakpoint"
+                    }
+
+                    forbidden_attributes = {
+                        "system", "popen", "Popen",
+                        "connect", "urlopen"
+                    }
+
+                    for node in ast.walk(tree):
+                        if isinstance(node, (ast.Import, ast.ImportFrom)):
+                            raise ValueError(
+                                "Generated code must not import modules."
+                            )
+
+                        if isinstance(node, ast.Name):
+                            if node.id in forbidden_names:
+                                raise ValueError(
+                                    "Generated code uses a restricted function."
+                                )
+
+                        if isinstance(node, ast.Call):
+                            if (
+                                isinstance(node.func, ast.Attribute)
+                                and node.func.attr in forbidden_attributes
+                            ):
+                                raise ValueError(
+                                    "Generated code uses a restricted operation."
+                                )
+
+                        if (
+                            isinstance(node, ast.Attribute)
+                            and node.attr.startswith("__")
+                        ):
+                            raise ValueError(
+                                "Generated code uses restricted attributes."
+                            )
 
                     # Execute in a restricted namespace.
                     # This is a basic demonstration, not a secure sandbox.

@@ -1,6 +1,11 @@
 Bernadette N.A.A Iipinge
 226162389
 
+## Application Links
+
+- **Live Application:** [Open my data analysis application](https://llm-data-analysis-app-4haexyc9zxnkfbvscy4nym.streamlit.app/)
+- **Streamlit Community Cloud:** [Visit Streamlit](https://share.streamlit.io/)
+
 # LLM-Powered Data Analysis Application
 
 ## Project Overview
